@@ -16,14 +16,28 @@ import subprocess
 import  logging
 import  smtplib
 import  os
-import email.message
+import psutil
+
+
 from email.message import EmailMessage
+from dotenv import load_dotenv, find_dotenv
+from datetime import datetime
+disk_logger = logging.getLogger("disk")
+disk_logger.setLevel(logging.WARNING)
 
-logging.basicConfig(
-        filename="disk_report.log",
-        level=logging.WARNING
+disk_handler = logging.FileHandler("disk_report.log")
+disk_logger.addHandler(disk_handler)
 
-    )
+cpu_logger = logging.getLogger("cpu")
+cpu_logger.setLevel(logging.WARNING)
+
+cpu_handler = logging.FileHandler("cpu.log")
+cpu_logger.addHandler(cpu_handler)
+
+
+
+
+load_dotenv(dotenv_path="/home/adonai_tw/PersonLProject/DevOPS/Python_script_practice/proj1/python_script/.env", override=True)
 def send_email(subject, report):
 
     #sender = "your email "
@@ -37,6 +51,7 @@ def send_email(subject, report):
         print("EMAIL_RECEIVER not found")
     if password is None:
         print("EMAIL_PASSWORD not found")
+
 
 
 
@@ -70,16 +85,27 @@ def monitor_disk():
              if rem >= 80:
                  print(line[0])
                  message = f"This {line[0]}is warrning that exceed the limit above 80$ {rem}%"
-                 logging.warning(message)
+                 disk_logger.warning(message)
                  send_email("Warning Sign ", message)
              if rem > 90:
                  message = f"This {line[0]}is warrning that exceed the limit above 90$ {rem}%"
-                 logging.critical(message)
+                 disk_logger.critical(message)
                  send_email("Critical Sign ", message)
 
     # for line in report.stdout.splitlines():
     #     print(line)  # You c
 
+def moniture_cpu():
+    cpu = psutil.cpu_percent(interval=1)
+    memory = psutil.virtual_memory().percent
+
+    if cpu > 0.8:
+       cpu_logger.warning(f"Its above the threshold of using the cpu, which is {cpu}")
+
+    if memory >0.8:
+        cpu_logger.warning(f"Its above the threshold of using memory, which is  {memory}")
 
 print("New list")
+print(f"Script ran at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 monitor_disk()
+moniture_cpu()
